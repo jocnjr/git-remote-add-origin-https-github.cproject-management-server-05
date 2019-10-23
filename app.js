@@ -17,6 +17,7 @@ const cors = require('cors');
 
 const session = require('express-session');
 const passport = require('passport');
+const MongoStore = require('connect-mongo')(session)
 
 require('./configs/passport');
 
@@ -65,7 +66,11 @@ app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon.ico')));
 app.use(session({
   secret: "fakebook",
   resave: true,
-  saveUninitialized: true
+  saveUninitialized: true,
+  store: new MongoStore({
+    mongooseConnection: mongoose.connection,
+    ttl: 24 * 60 * 60
+  })
 }));
 
 // USE passport.initialize() and passport.session() HERE:
@@ -86,10 +91,16 @@ app.use(cors({
 // ROUTES MIDDLEWARE STARTS HERE:
 
 const index = require('./routes/index');
-app.use('/', index);
+// app.use('/', index);
 app.use('/api', require('./routes/project'));
 app.use('/api', require('./routes/task'));
 const authRoutes = require('./routes/auth');
 app.use('/api', authRoutes);
+
+
+app.use((req, res, next) => {
+  res.sendFile(__dirname + "/public/index.html");
+});
+
 
 module.exports = app;
